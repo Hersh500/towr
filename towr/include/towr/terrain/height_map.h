@@ -90,6 +90,7 @@ public:
   enum Direction { Normal, Tangent1, Tangent2 };
 
   HeightMap() = default;
+  HeightMap(std::string path_to_csv);
   virtual ~HeightMap () = default;
 
   /**

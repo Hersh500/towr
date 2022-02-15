@@ -3,7 +3,7 @@ project(towr VERSION 1.3.2)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 find_package(ifopt 2.0.1 REQUIRED)
-
+find_package(gflags REQUIRED)
 
 ###########
 ## Build ##
@@ -65,6 +65,7 @@ add_library(${PROJECT_NAME} SHARED
 target_link_libraries(${PROJECT_NAME} 
   PUBLIC 
     ifopt::ifopt_core
+    gflags
 )
 target_include_directories(${PROJECT_NAME} 
   PUBLIC
@@ -81,12 +82,26 @@ enable_testing()
 add_executable(${PROJECT_NAME}-example 
   test/hopper_example.cc
 )
+
+add_executable(cassie-example
+        test/cassie_example.cc
+        )
+
 target_link_libraries(${PROJECT_NAME}-example  
   PRIVATE
     ${PROJECT_NAME} 
     ifopt::ifopt_ipopt
 )
+
+target_link_libraries(cassie-example
+        PRIVATE
+        ${PROJECT_NAME}
+        ifopt::ifopt_ipopt
+        gflags
+        )
+
 add_test(${PROJECT_NAME}-example ${PROJECT_NAME}-example)
+add_test(cassie-example cassie-example)
 
 # unit tests of costs/constraints
 find_package(GTest QUIET)

@@ -50,6 +50,7 @@ namespace towr {
 
 NlpFormulation::NlpFormulation ()
 {
+  /*
   using namespace std;
   cout << "\n";
   cout << "************************************************************\n";
@@ -58,6 +59,7 @@ NlpFormulation::NlpFormulation ()
   cout << "           https://github.com/ethz-adrl/towr\n";
   cout << "************************************************************";
   cout << "\n\n";
+  */
 }
 
 NlpFormulation::VariablePtrVec

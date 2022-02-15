@@ -70,7 +70,8 @@ struct RobotModel {
   enum Robot { Monoped, ///< one-legged hopper
                Biped,   ///< two-legged
                Hyq,     ///< four-legged robot from IIT
-               Anymal,  ///< four-legged robot from Anybotics
+               Anymal,  ///< four-legged robot from Anybotics,
+               Cassie,
                ROBOT_COUNT };
 
 
@@ -87,7 +88,8 @@ const static std::map<RobotModel::Robot, std::string> robot_names =
   {RobotModel::Monoped, "Monoped"},
   {RobotModel::Biped,   "Biped"},
   {RobotModel::Hyq,     "Hyq"},
-  {RobotModel::Anymal,  "Anymal"}
+  {RobotModel::Anymal,  "Anymal"},
+  {RobotModel::Cassie, "Cassie"}
 };
 
 } /* namespace towr */

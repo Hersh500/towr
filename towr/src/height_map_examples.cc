@@ -28,6 +28,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
 #include <towr/terrain/examples/height_map_examples.h>
+#include <fstream>
+#include <iostream>
 
 namespace towr {
 
@@ -210,4 +212,63 @@ ChimneyLR::GetHeightDerivWrtY (double x, double y) const
   return dzdy;
 }
 
+CSVHeightMap::CSVHeightMap(const std::string csv_fname) {
+  // Copy dairlib csv reading code here...Are there problems with matrix initializations or something?
+  std::ifstream indata;
+  indata.open(csv_fname);
+  std::string line;
+  bool read_heightmap = false;
+  while (std::getline(indata, line)) {
+    std::stringstream lineStream(line);
+    std::string cell;
+
+    // TODO(hersh500): consider changing this from hardcoded to a loop.
+    if (read_heightmap) {
+      std::getline(lineStream, cell, ',');
+      discretization = std::stod(cell);
+      std::getline(lineStream, cell, ',');
+      friction_coeff_ = std::stod(cell);
+      std::getline(lineStream, cell, ',');
+      x0 = std::stod(cell);
+      std::getline(lineStream, cell, ',');
+      y0 = std::stod(cell);
+    }
+
+    while (std::getline(lineStream, cell, ',')) {
+      if (cell.at(0) == 'D') {
+        read_heightmap = true;
+      }
+      if (!read_heightmap) {
+        terrain_array.push_back(std::stod(cell));
+      }
+    }
+    if (!read_heightmap) {
+      ++n_rows;
+    }
+  }
+
+  if (terrain_array.empty()) {
+    std::cout << ("Could not read " + csv_fname + " to load CSV.").c_str() << std::endl;
+  } else {
+    n_cols = terrain_array.size() / n_rows;
+  }
+}
+
+double CSVHeightMap::GetHeight(double x, double y) const {
+  double max_x = discretization * n_cols;
+  double max_y = discretization * n_rows;
+  if (x > max_x || x < x0 || y > max_y || y < y0) {
+    return 0.0;
+  }
+
+  // cast is okay since we checked the bounds above.
+  unsigned int col_idx = (x - x0)/discretization;
+  unsigned int row_idx = (y - y0)/discretization;
+
+  return terrain_array.at(row_idx * n_rows + col_idx);
+}
+
+bool CSVHeightMap::isEmpty() {
+  return terrain_array.empty();
+}
 } /* namespace towr */

@@ -165,6 +165,21 @@ private:
   const double x_end2_ = x_start_+2*length_;
 };
 
+/**
+ * @brief Terrain that is constructed based on an input csv file.
+ */
+class CSVHeightMap : public HeightMap {
+    public:
+        CSVHeightMap(const std::string csv_fname);
+        double GetHeight(double x, double y) const override;
+        bool isEmpty();
+    private:
+        std::vector<double> terrain_array;
+        double x0, y0;
+        double discretization;
+        unsigned int n_rows, n_cols;
+    };
+
 /** @}*/
 
 } /* namespace towr */
