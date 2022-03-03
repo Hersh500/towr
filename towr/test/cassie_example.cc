@@ -47,6 +47,7 @@ DEFINE_bool(walk, true, "true if walking gait, false if running gait");
 DEFINE_double(initial_x_vel, 0.0, "initial x velocity");
 DEFINE_double(initial_y_vel, 0.0, "initial y velocity");
 DEFINE_double(T, 10.0, "total time of the motion");
+DEFINE_double(goal_x, 2.0, "goal x location in meters");
 
 void printProblemOutput(SplineHolder& solution) {
   using namespace std;
@@ -112,6 +113,7 @@ int main(int argc, char* argv[])
   // Create the heightmap from the input csv, else use flat ground.
   std::shared_ptr<CSVHeightMap> heightmap = std::make_shared<CSVHeightMap>(FLAGS_height_csv);
   if (heightmap->isEmpty()) {
+    std::cout << "Couldn't read heightmap csv!" << std::endl;
     formulation.terrain_ = std::make_shared<FlatGround>(0.0);
   } else {
     formulation.terrain_ = heightmap;
@@ -128,8 +130,9 @@ int main(int argc, char* argv[])
                 [&](Eigen::Vector3d& p){p.z() = z_ground;});
 
   formulation.initial_base_.lin.at(kPos).z() = -formulation.model_.kinematic_model_->GetNominalStanceInBase().front().z() + z_ground;
+
   // define the desired goal state
-  formulation.final_base_.lin.at(towr::kPos) << 2.0, 0.0, 0.7;
+  formulation.final_base_.lin.at(towr::kPos) << FLAGS_goal_x, 0.0, 0.7 + formulation.terrain_->GetHeight(FLAGS_goal_x, 0.0) + 0.7;
 
   // Parameters that define the motion. See c'tor for default values or
   // other values that can be modified.
@@ -137,8 +140,13 @@ int main(int argc, char* argv[])
   // by the optimizer. The number of swing and stance phases however is fixed.
   // alternating stance and swing:     ____-----_____-----_____-----_____
   auto gait_gen = GaitGenerator::MakeGaitGenerator(n_ee);
-  auto id_gait = GaitGenerator::Combos::C0;
-  gait_gen->SetCombo(id_gait);
+  std::vector<GaitGenerator::Gaits> gait_vector = {GaitGenerator::Stand};
+  // divide by 2 since each Walk1 is 2 steps--left and right.
+  for (int i = 0; i < (int)(FLAGS_num_steps/2); i++) {
+    gait_vector.push_back(GaitGenerator::Walk1);
+  }
+  gait_vector.push_back(GaitGenerator::Stand);
+  gait_gen->SetGaits(gait_vector);
   for (int ee=0; ee < n_ee; ++ee) {
     formulation.params_.ee_phase_durations_.push_back(gait_gen->GetPhaseDurations(FLAGS_T, ee));
     formulation.params_.ee_in_contact_at_start_.push_back(gait_gen->IsInContactAtStart(ee));
@@ -164,7 +172,7 @@ int main(int argc, char* argv[])
   auto solver = std::make_shared<ifopt::IpoptSolver>();
 //  solver->SetOption("derivative_test", "first-order");
   solver->SetOption("jacobian_approximation", "exact"); // "finite difference-values"
-  solver->SetOption("max_cpu_time", 40.0);
+  solver->SetOption("max_cpu_time", 60.0);
   solver->SetOption("sb", "yes");
   solver->SetOption("print_level", 0);
   solver->Solve(nlp);
@@ -184,9 +192,11 @@ int main(int argc, char* argv[])
   Eigen::IOFormat CommaInitFmt(Eigen::StreamPrecision, Eigen::DontAlignCols,
                                ", ", "\n", "", "", "", "");
   ofile.open(FLAGS_height_csv + "output");
+
   for (Eigen::Vector3d contact : contacts) {
     ofile << contact.transpose().format(CommaInitFmt) << endl;
   }
 
-  return 0;
+//  printProblemOutput(solution);
+  return solver->GetReturnStatus();
 }
